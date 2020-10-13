@@ -21,6 +21,8 @@ import com.samskivert.mustache.Mustache;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.media.Schema;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.openapitools.codegen.*;
 import org.openapitools.codegen.languages.features.BeanValidationFeatures;
@@ -29,6 +31,7 @@ import org.openapitools.codegen.languages.features.PerformBeanValidationFeatures
 import org.openapitools.codegen.meta.features.*;
 import org.openapitools.codegen.templating.mustache.SplitStringLambda;
 import org.openapitools.codegen.templating.mustache.TrimWhitespaceLambda;
+import org.openapitools.codegen.utils.ModelUtils;
 import org.openapitools.codegen.utils.URLPathUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -898,4 +901,15 @@ public class SpringCodegen extends AbstractJavaCodegen
         }
     }
 
+    @Override
+    public String toDefaultValue(Schema schema) {
+        if (ModelUtils.isGenerateAliasAsModel() && StringUtils.isNotEmpty(schema.get$ref())) {
+            Schema<?> ref = ModelUtils.getReferencedSchema(this.openAPI, schema);
+            if (ModelUtils.isArraySchema(ref) || ModelUtils.isMapSchema(ref)) {
+                String typeDeclaration = getTypeDeclaration(schema);
+                return String.format(Locale.ROOT, "new %s()", typeDeclaration);
+            }
+        }
+        return super.toDefaultValue(schema);
+    }
 }
